@@ -1,0 +1,45 @@
+{
+  "bankroll_start": 10000,
+  "bankroll_current": 10000,
+  "bets": [
+    {
+      "date": "2026-04-20",
+      "game": "Senators @ Hurricanes",
+      "bet": "Over 5.5 Goals",
+      "odds": 105,
+      "units": 3,
+      "implied": 0.488,
+      "model_prob": 0.559,
+      "ev": 14.5,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Game 1 data not yet in market. +105 on an over with 7-point edge. Both teams push pace in playoff Game 2s."
+    },
+    {
+      "date": "2026-04-20",
+      "game": "Braves @ Nationals",
+      "bet": "Over 8 Runs",
+      "odds": -105,
+      "units": 2,
+      "implied": 0.512,
+      "model_prob": 0.570,
+      "ev": 11.4,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Nationals bullpen bottom-5 ERA. Public fades road overs — that's the edge. 5.7% model edge on -105 line."
+    },
+    {
+      "date": "2026-04-20",
+      "game": "Astros vs Guardians",
+      "bet": "Over 7.5 Runs",
+      "odds": -110,
+      "units": 2,
+      "implied": 0.524,
+      "model_prob": 0.566,
+      "ev": 8.0,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Astros offense heating up. Guardians pitching depleted. Soft line with moderate edge."
+    }
+  ]
+}

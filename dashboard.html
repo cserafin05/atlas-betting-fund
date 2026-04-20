@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATLAS BETTING FUND</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0f; color: #e0e0e0; font-family: 'Courier New', monospace; padding: 24px; }
+
+    h1 { font-size: 1.4rem; letter-spacing: 4px; color: #00ff88; margin-bottom: 4px; }
+    .subtitle { color: #555; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 28px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: #111118;
+      border: 1px solid #1e1e2e;
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .stat-label { font-size: 0.65rem; color: #555; letter-spacing: 2px; margin-bottom: 6px; }
+    .stat-value { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .stat-value.green { color: #00ff88; }
+    .stat-value.red { color: #ff4466; }
+    .stat-value.yellow { color: #ffd700; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: #555;
+      border-bottom: 1px solid #1e1e2e;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chart-container { background: #111118; border: 1px solid #1e1e2e; border-radius: 6px; padding: 16px; height: 220px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th {
+      text-align: left;
+      color: #555;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #1e1e2e;
+    }
+    td { padding: 10px; border-bottom: 1px solid #111118; vertical-align: top; }
+    tr:hover td { background: #111118; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    .badge-win { background: #00ff8822; color: #00ff88; border: 1px solid #00ff8844; }
+    .badge-loss { background: #ff446622; color: #ff4466; border: 1px solid #ff446644; }
+    .badge-pending { background: #ffd70022; color: #ffd700; border: 1px solid #ffd70044; }
+
+    .ev-pos { color: #00ff88; }
+    .ev-neg { color: #ff4466; }
+
+    .empty-state { text-align: center; color: #333; padding: 40px; font-size: 0.8rem; letter-spacing: 2px; }
+
+    .upload-area {
+      background: #111118;
+      border: 1px dashed #2a2a3e;
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 28px;
+      cursor: pointer;
+    }
+    .upload-area:hover { border-color: #00ff8844; }
+    .upload-area label { cursor: pointer; color: #555; font-size: 0.7rem; letter-spacing: 2px; }
+    .upload-area input { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>⚡ ATLAS BETTING FUND</h1>
+  <div class="subtitle">AUTONOMOUS EV MANAGER — SIMULATED PORTFOLIO</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">BANKROLL</div>
+      <div class="stat-value yellow" id="bankroll">$10,000</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">P&L</div>
+      <div class="stat-value" id="pnl">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ROI</div>
+      <div class="stat-value" id="roi">0.00%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">RECORD</div>
+      <div class="stat-value" id="record">0-0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">WIN RATE</div>
+      <div class="stat-value" id="winrate">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">UNITS NET</div>
+      <div class="stat-value" id="units_net">0.00u</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">AVG EV</div>
+      <div class="stat-value" id="avg_ev">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">TOTAL BETS</div>
+      <div class="stat-value" id="total_bets">0</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">BANKROLL CURVE</div>
+    <div class="chart-container">
+      <canvas id="bankrollChart"></canvas>
+    </div>
+  </div>
+
+  <div class="upload-area">
+    <label>
+      📂 LOAD bets.json
+      <input type="file" id="fileInput" accept=".json" />
+    </label>
+  </div>
+
+  <div class="section">
+    <div class="section-title">BET LEDGER</div>
+    <table id="betTable">
+      <thead>
+        <tr>
+          <th>DATE</th>
+          <th>GAME</th>
+          <th>BET</th>
+          <th>ODDS</th>
+          <th>UNITS</th>
+          <th>IMPLIED</th>
+          <th>MODEL</th>
+          <th>EV</th>
+          <th>RESULT</th>
+          <th>P&L</th>
+        </tr>
+      </thead>
+      <tbody id="betBody">
+        <tr><td colspan="10" class="empty-state">NO BETS YET — ATLAS IS WATCHING THE MARKETS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let chartInstance = null;
+
+    function fmt(n, digits = 2) {
+      return n.toFixed(digits);
+    }
+
+    function renderDashboard(data) {
+      const bets = data.bets || [];
+      const start = data.bankroll_start || 10000;
+      const unit = start / 100;
+
+      const settled = bets.filter(b => b.result === 'win' || b.result === 'loss');
+      const wins = settled.filter(b => b.result === 'win').length;
+      const losses = settled.filter(b => b.result === 'loss').length;
+
+      let unitsNet = 0;
+      settled.forEach(b => {
+        if (b.result === 'win') {
+          const decOdds = b.odds > 0 ? b.odds / 100 : 100 / Math.abs(b.odds);
+          unitsNet += b.units * decOdds;
+        } else {
+          unitsNet -= b.units;
+        }
+      });
+
+      const pnl = unitsNet * unit;
+      const bankroll = start + pnl;
+      const roi = settled.length > 0 ? (pnl / (settled.reduce((s, b) => s + b.units, 0) * unit)) * 100 : 0;
+      const winRate = settled.length > 0 ? (wins / settled.length) * 100 : null;
+
+      const evBets = bets.filter(b => b.ev != null);
+      const avgEV = evBets.length > 0 ? evBets.reduce((s, b) => s + b.ev, 0) / evBets.length : null;
+
+      // Stats
+      document.getElementById('bankroll').textContent = `$${bankroll.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('bankroll').className = 'stat-value ' + (pnl >= 0 ? 'green' : 'red');
+
+      const pnlEl = document.getElementById('pnl');
+      pnlEl.textContent = (pnl >= 0 ? '+' : '') + `$${fmt(pnl)}`;
+      pnlEl.className = 'stat-value ' + (pnl >= 0 ? 'green' : 'red');
+
+      const roiEl = document.getElementById('roi');
+      roiEl.textContent = (roi >= 0 ? '+' : '') + fmt(roi) + '%';
+      roiEl.className = 'stat-value ' + (roi >= 0 ? 'green' : 'red');
+
+      document.getElementById('record').textContent = `${wins}-${losses}`;
+      document.getElementById('winrate').textContent = winRate !== null ? fmt(winRate) + '%' : '—';
+
+      const unitsEl = document.getElementById('units_net');
+      unitsEl.textContent = (unitsNet >= 0 ? '+' : '') + fmt(unitsNet) + 'u';
+      unitsEl.className = 'stat-value ' + (unitsNet >= 0 ? 'green' : 'red');
+
+      const evEl = document.getElementById('avg_ev');
+      evEl.textContent = avgEV !== null ? (avgEV >= 0 ? '+' : '') + fmt(avgEV, 1) + '%' : '—';
+      evEl.className = 'stat-value ' + (avgEV !== null ? (avgEV >= 0 ? 'green' : 'red') : '');
+
+      document.getElementById('total_bets').textContent = bets.length;
+
+      // Chart
+      const curve = [start];
+      let running = start;
+      bets
+        .filter(b => b.result === 'win' || b.result === 'loss')
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .forEach(b => {
+          if (b.result === 'win') {
+            const dec = b.odds > 0 ? b.odds / 100 : 100 / Math.abs(b.odds);
+            running += b.units * unit * dec;
+          } else {
+            running -= b.units * unit;
+          }
+          curve.push(running);
+        });
+
+      const labels = ['START', ...Array(curve.length - 1).fill(null).map((_, i) => `#${i + 1}`)];
+      const color = bankroll >= start ? '#00ff88' : '#ff4466';
+
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(document.getElementById('bankrollChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: curve,
+            borderColor: color,
+            backgroundColor: color + '11',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: color,
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#444', font: { size: 10 } }, grid: { color: '#1a1a2e' } },
+            y: {
+              ticks: {
+                color: '#444',
+                font: { size: 10 },
+                callback: v => '$' + v.toLocaleString()
+              },
+              grid: { color: '#1a1a2e' }
+            }
+          }
+        }
+      });
+
+      // Table
+      const tbody = document.getElementById('betBody');
+      if (bets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">NO BETS YET — ATLAS IS WATCHING THE MARKETS</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = [...bets].reverse().map(b => {
+        const implied = b.implied != null ? fmt(b.implied * 100, 1) + '%' : '—';
+        const model = b.model_prob != null ? fmt(b.model_prob * 100, 1) + '%' : '—';
+        const ev = b.ev != null ? `<span class="${b.ev >= 0 ? 'ev-pos' : 'ev-neg'}">${b.ev >= 0 ? '+' : ''}${fmt(b.ev, 1)}%</span>` : '—';
+
+        let pnlText = '—';
+        if (b.result === 'win') {
+          const dec = b.odds > 0 ? b.odds / 100 : 100 / Math.abs(b.odds);
+          const profit = b.units * (b.bankroll_at_bet || start) / 100 * dec;
+          pnlText = `<span class="ev-pos">+$${fmt(profit)}</span>`;
+        } else if (b.result === 'loss') {
+          const loss = b.units * (b.bankroll_at_bet || start) / 100;
+          pnlText = `<span class="ev-neg">-$${fmt(loss)}</span>`;
+        }
+
+        const resultBadge = b.result === 'win'
+          ? '<span class="badge badge-win">WIN</span>'
+          : b.result === 'loss'
+          ? '<span class="badge badge-loss">LOSS</span>'
+          : '<span class="badge badge-pending">PENDING</span>';
+
+        return `<tr>
+          <td>${b.date || '—'}</td>
+          <td>${b.game || '—'}</td>
+          <td>${b.bet || '—'}</td>
+          <td>${b.odds > 0 ? '+' : ''}${b.odds}</td>
+          <td>${b.units}u</td>
+          <td>${implied}</td>
+          <td>${model}</td>
+          <td>${ev}</td>
+          <td>${resultBadge}</td>
+          <td>${pnlText}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Load from file input
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          renderDashboard(data);
+        } catch {
+          alert('Invalid JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Embedded bet data — updated by ATLAS each session
+    const ATLAS_DATA = {
+  "bankroll_start": 10000,
+  "bankroll_current": 10000,
+  "bets": [
+    {
+      "date": "2026-04-20",
+      "game": "Senators @ Hurricanes",
+      "bet": "Over 5.5 Goals",
+      "odds": 105,
+      "units": 3,
+      "implied": 0.488,
+      "model_prob": 0.559,
+      "ev": 14.5,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Game 1 data not yet in market. +105 on an over with 7-point edge. Both teams push pace in playoff Game 2s."
+    },
+    {
+      "date": "2026-04-20",
+      "game": "Braves @ Nationals",
+      "bet": "Over 8 Runs",
+      "odds": -105,
+      "units": 2,
+      "implied": 0.512,
+      "model_prob": 0.570,
+      "ev": 11.4,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Nationals bullpen bottom-5 ERA. Public fades road overs — that's the edge. 5.7% model edge on -105 line."
+    },
+    {
+      "date": "2026-04-20",
+      "game": "Astros vs Guardians",
+      "bet": "Over 7.5 Runs",
+      "odds": -110,
+      "units": 2,
+      "implied": 0.524,
+      "model_prob": 0.566,
+      "ev": 8.0,
+      "result": "pending",
+      "bankroll_at_bet": 10000,
+      "reasoning": "Astros offense heating up. Guardians pitching depleted. Soft line with moderate edge."
+    }
+  ]
+};
+
+    renderDashboard(ATLAS_DATA);
+
+    // Also try loading bets.json if served via local server
+    fetch('bets.json')
+      .then(r => r.json())
+      .then(renderDashboard)
+      .catch(() => {});
+  </script>
+</body>
+</html>
